@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Paycheck Splitter (Template)</title>
+
+  <!--
+    TEMPLATE NOTES (edit these):
+    - Change the title above
+    - Change the default allocation percentages
+    - Change the bucket names (Core/Dip/Crypto/Spending)
+    - Add/remove buckets if you want
+    - This file is meant to be forked and customized
+  -->
+
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; max-width: 860px; }
+    h1 { margin: 0 0 12px; }
+    .small { color:#555; font-size: 14px; line-height: 1.4; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 12px 0; }
+    label { display:block; font-weight: 600; margin-top: 10px; }
+    input { width: 200px; padding: 8px; border-radius: 10px; border: 1px solid #ccc; }
+    .row { display:flex; flex-wrap:wrap; gap:18px; align-items:end; }
+    table { width:100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { text-align:left; padding: 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .pill { display:inline-block; padding: 3px 10px; border-radius:999px; border:1px solid #ddd; font-size: 12px; margin: 4px 6px 0 0; }
+  </style>
+</head>
+
+<body>
+  <h1>Paycheck Splitter</h1>
+  <div class="small">
+    <!-- TEMPLATE NOTE: Replace this description with your own. -->
+    Enter an amount you received and this will calculate how much goes into each bucket.
+  </div>
+
+  <div class="card">
+    <h2 style="margin:0 0 6px;">Input</h2>
+
+    <div class="row">
+      <div>
+        <label>Payment amount ($)</label>
+        <!-- TEMPLATE NOTE: Leave value="" empty so users type it -->
+        <input id="payment" type="number" step="0.01" value="" placeholder="e.g., 280" />
+        <div class="small">What you just got paid (paycheck, freelance, etc.).</div>
+      </div>
+
+      <div>
+        <label>Optional: Monthly extra ($)</label>
+        <!-- TEMPLATE NOTE: Leave value="" empty if you don’t want this -->
+        <input id="monthlyExtra" type="number" step="0.01" value="" placeholder="e.g., 200" />
+        <div class="small">If you get a monthly deposit, put it here.</div>
+      </div>
+
+      <div>
+        <label>Use monthly extra instead?</label>
+        <input id="useExtra" type="checkbox" />
+        <div class="small">Check this if you’re allocating the monthly extra deposit.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin:0 0 6px;">Allocation rules</h2>
+    <div class="small">
+      <!-- TEMPLATE NOTE: These should sum to 100%. -->
+      Set your percentages. They should add up to 100%.
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Bucket A: Spending (%)</label>
+        <input id="pctSpend" type="number" step="1" value="" placeholder="e.g., 25" />
+        <div class="small">Gas, fun money, anything “life.”</div>
+      </div>
+
+      <div>
+        <label>Bucket B: Core investing (%)</label>
+        <input id="pctCore" type="number" step="1" value="" placeholder="e.g., 50" />
+        <div class="small">VOO/VTI, index fund, etc.</div>
+      </div>
+
+      <div>
+        <label>Bucket C: Dip fund (%)</label>
+        <input id="pctDip" type="number" step="1" value="" placeholder="e.g., 12" />
+        <div class="small">Cash you save for “buy the dip.”</div>
+      </div>
+
+      <div>
+        <label>Bucket D: Crypto (%)</label>
+        <input id="pctCrypto" type="number" step="1" value="" placeholder="e.g., 13" />
+        <div class="small">High risk bucket (optional).</div>
+      </div>
+    </div>
+
+    <div id="warn" class="small" style="color:#b00020; display:none; margin-top:10px;"></div>
+
+    <div class="small" style="margin-top:10px;">
+      <!-- TEMPLATE NOTE: You can delete this entire section if you don't want it. -->
+      Example dip plan:
+      <span class="pill mono">-5% → 10%</span>
+      <span class="pill mono">-10% → 20%</span>
+      <span class="pill mono">-15% → 30%</span>
+      <span class="pill mono">-20% → rest</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin:0 0 6px;">Results</h2>
+
+    <table>
+      <thead>
+        <tr><th>Bucket</th><th>Amount</th><th>Notes</th></tr>
+      </thead>
+      <tbody id="out">
+        <!-- Output rows will be injected here -->
+      </tbody>
+    </table>
+
+    <div class="small" style="margin-top:10px;">
+      <!-- TEMPLATE NOTE: You can change this to whatever you want. -->
+      Tip: If you don’t want percentages, you can replace the math with fixed dollar amounts.
+    </div>
+  </div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function money(n) {
+    return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
+  }
+
+  function round2(n) {
+    return Math.round(n * 100) / 100;
+  }
+
+  function safeNumber(val) {
+    const n = parseFloat(val);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function calc() {
+    const payment = safeNumber($("payment").value);
+    const monthlyExtra = safeNumber($("monthlyExtra").value);
+    const useExtra = $("useExtra").checked;
+
+    // Choose which amount we're allocating right now
+    const base = useExtra ? monthlyExtra : payment;
+
+    const pctSpend = safeNumber($("pctSpend").value);
+    const pctCore = safeNumber($("pctCore").value);
+    const pctDip = safeNumber($("pctDip").value);
+    const pctCrypto = safeNumber($("pctCrypto").value);
+
+    const sum = pctSpend + pctCore + pctDip + pctCrypto;
+
+    const warn = $("warn");
+    if (base <= 0) {
+      warn.style.display = "block";
+      warn.textContent = "Enter a payment amount (or check 'Use monthly extra' and enter that amount).";
+    } else if (Math.abs(sum - 100) > 0.001) {
+      warn.style.display = "block";
+      warn.textContent = `Your percentages add up to ${sum}%. Adjust them to total 100%.`;
+    } else {
+      warn.style.display = "none";
+    }
+
+    // If base is 0, still render zeros
+    const spend = round2(base * (pctSpend / 100));
+    const core = round2(base * (pctCore / 100));
+    const dip = round2(base * (pctDip / 100));
+    const crypto = round2(base * (pctCrypto / 100));
+
+    // Fix rounding differences by applying leftover to core
+    const leftover = round2(base - (spend + core + dip + crypto));
+    const coreAdj = round2(core + leftover);
+
+    // TEMPLATE NOTE: Change names/notes here to match your buckets
+    const rows = [
+      ["Spending", spend, "Gas / fun / life"],
+      ["Core investing", coreAdj, "Index fund / long-term"],
+      ["Dip fund", dip, "Cash saved for dips"],
+      ["Crypto", crypto, "Optional high-risk bucket"],
+    ];
+
+    const tbody = $("out");
+    tbody.innerHTML = "";
+    for (const [name, amt, note] of rows) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${name}</td><td class="mono">${money(amt)}</td><td class="small">${note}</td>`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  // Recalc on any input changes
+  ["payment","monthlyExtra","useExtra","pctSpend","pctCore","pctDip","pctCrypto"]
+    .forEach(id => $(id).addEventListener("input", calc));
+
+  calc();
+</script>
+</body>
+</html>
