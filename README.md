@@ -29,17 +29,4 @@ If you enable GitHub Pages, your site will be available at:
 4. Set your allocation percentages (they should add up to 100%).
 5. The tool shows exact dollar amounts for each bucket.
 
-## Customization Guide
 
-Open `index-template.html` and edit:
-
-### 1) Bucket names
-Find the `rows = [...]` array and rename the buckets:
-
-```js
-const rows = [
-  ["Spending", spend, "Gas / fun / life"],
-  ["Core investing", coreAdj, "Index fund / long-term"],
-  ["Dip fund", dip, "Cash saved for dips"],
-  ["Crypto", crypto, "Optional high-risk bucket"],
-];
