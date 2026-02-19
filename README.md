@@ -30,3 +30,6 @@ If you enable GitHub Pages, your site will be available at:
 5. The tool shows exact dollar amounts for each bucket.
 
 
+## Customization
+
+Copy the index-template.html and put it into your own repository, then follow instructions in the file.
